@@ -6,3 +6,5 @@ edition = "2018"
 
 [dependencies]
 clap = "2.33.0"
+serde = "1.0.90"
+toml = "0.5.0"
