@@ -1,5 +1,7 @@
 use crate::{Filter, Getter};
 
+pub static EV: Enver = Enver {};
+
 pub struct Enver {}
 
 impl<'a> Getter<'a> for Enver {
