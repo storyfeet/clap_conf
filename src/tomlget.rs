@@ -44,5 +44,21 @@ mod tomltests {
         let t: Value = "[a.b.c]\ncar=\"red\"".parse().unwrap();
         let r = t.value("a.b.c.car", Filter::Conf).unwrap();
         assert_eq!(r, "red");
+
+        let t: Value = "[[a.b]]\ncar=\"red\"\n[[a.b]]\ncar=\"green\""
+            .parse()
+            .unwrap();
+        let r = t.value("a.b.1.car", Filter::Conf).unwrap();
+        assert_eq!(r, "green");
+    }
+
+    #[test]
+    fn test_iter() {
+        let t: Value = "[a.b]\ncar=[\"red\",\"green\"]".parse().unwrap();
+        let mut r = t
+            .values("a.b.car", Filter::Conf)
+            .expect("Could not get values");
+        assert_eq!(r.next().unwrap().as_str().unwrap(), "red");
+        assert_eq!(r.next().unwrap().as_str().unwrap(), "green");
     }
 }

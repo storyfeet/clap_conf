@@ -1,11 +1,12 @@
 pub mod clapget;
 pub mod env;
+pub mod grabber;
 pub mod tomlget;
 
 pub use clap::{clap_app, crate_version, ArgMatches, Values};
 
 pub fn clap_env<'a>(a: &'a ArgMatches<'a>) -> impl Getter<'a> {
-    env::EV.holden(a)
+    env::EV.hold(a)
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -16,26 +17,29 @@ pub enum Filter {
     Other(char),
 }
 
-pub trait Getter<'a> {
+pub trait Getter<'a>: Sized {
     type Iter: IntoIterator;
     fn value<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<String>;
     fn values<S: AsRef<str>>(&'a self, s: S, f: Filter) -> Option<Self::Iter>;
 
-    fn holden<B,N1,N2,R, R2>(&'a self, b: &'a B) -> Holder<'a, Self, B, R>
+    fn hold<B, N1, N2, R, R2>(&'a self, b: &'a B) -> Holder<'a, Self, B, R>
     where
-    Self:Sized,
-    Self::Iter: IntoIterator<IntoIter = N1, Item = R>,
-    B:Getter<'a>,
-    B::Iter: IntoIterator<IntoIter = N2, Item = R2>,
-    N1: Iterator<Item = R>,
-    N2: Iterator<Item = R2>,
-    R: std::convert::From<R2>,
+        Self::Iter: IntoIterator<IntoIter = N1, Item = R>,
+        B: Getter<'a>,
+        B::Iter: IntoIterator<IntoIter = N2, Item = R2>,
+        N1: Iterator<Item = R>,
+        N2: Iterator<Item = R2>,
+        R: std::convert::From<R2>,
     {
         Holder {
             a: self,
             b,
             _r: None,
         }
+    }
+
+    fn grab(&'a self) -> grabber::Grabber<'a, Self> {
+        grabber::Grabber::new(self)
     }
 }
 
@@ -102,14 +106,32 @@ where
     }
 }
 
-#[cfg(test)]
+//#[cfg(test)]
 mod tests {
     use super::*;
-    #[test]
+    //#[test]
     fn try_holder() {
         let a = ArgMatches::new();
         let ce = clap_env(&a);
         assert_eq!(ce.value("ss", Filter::Arg), None);
-        assert_eq!(ce.value("PWD",Filter::Env),Some("/home/matthew/scripts/rust/mlibs/clap_conf".to_string()));
+        assert_eq!(
+            ce.value("PWD", Filter::Env),
+            Some("/home/matthew/scripts/rust/mlibs/clap_conf".to_string())
+        );
+        let g = a.grab();
+
+        assert_eq!(
+            g.env("PWD").done(),
+            Some("/home/matthew/scripts/rust/mlibs/clap_conf".to_string())
+        );
     }
+
+    /*#[test]
+    fn test_grab() {
+        let a = ArgMatches::new();
+        let tml: toml::Value = "a=\"cat\"".parse().unwrap();
+        //let ce = clap_env(&a).hold(tml);
+
+        //assert_eq!(ce.grab().conf("a").done(), Some("cat"));
+    }*/
 }
