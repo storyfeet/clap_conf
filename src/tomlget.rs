@@ -12,9 +12,8 @@ fn dig<S: AsRef<str>, I: Iterator<Item = S>>(v: &Value, mut i: I) -> Option<&Val
     }
 }
 
-impl<'a> Getter<'a> for Value {
-    type Iter = std::slice::Iter<'a, Value>;
-    fn value<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<String> {
+impl <'a> Getter<&'a Value,std::slice::Iter<'a, Value>> for Value {
+    fn value<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<&'a Value> {
         if f != Filter::Conf {
             return None;
         }
@@ -22,7 +21,7 @@ impl<'a> Getter<'a> for Value {
         Some(r.as_str()?.to_string())
     }
 
-    fn values<S: AsRef<str>>(&'a self, s: S, f: Filter) -> Option<Self::Iter> {
+    fn values<S: AsRef<str>>(&'a self, s: S, f: Filter) -> Option<std::slice::Iter<'a,Value>> {
         if f != Filter::Conf {
             return None;
         }

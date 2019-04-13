@@ -5,7 +5,7 @@ pub mod tomlget;
 
 pub use clap::{clap_app, crate_version, ArgMatches, Values};
 
-pub fn clap_env<'a>(a: &'a ArgMatches<'a>) -> impl Getter<'a> {
+pub fn clap_env<'a>(a: ArgMatches<'a>) -> Holder<env::Enver,ArgMatches<'a>,String,&'a str>{
     env::EV.hold(a)
 }
 
@@ -17,19 +17,18 @@ pub enum Filter {
     Other(char),
 }
 
-pub trait Getter<'a>: Sized {
-    type Iter: IntoIterator;
-    fn value<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<String>;
-    fn values<S: AsRef<str>>(&'a self, s: S, f: Filter) -> Option<Self::Iter>;
+pub trait Getter<R, IT>: Sized
+where
+    IT: Iterator<Item = R>,
+{
+    fn value<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<R>;
+    fn values<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<IT>;
 
-    fn hold<B, N1, N2, R, R2>(&'a self, b: &'a B) -> Holder<'a, Self, B, R>
+    fn hold<B, RB, ITB>(self, b: B) -> Holder<Self, B, R,RB>
     where
-        Self::Iter: IntoIterator<IntoIter = N1, Item = R>,
-        B: Getter<'a>,
-        B::Iter: IntoIterator<IntoIter = N2, Item = R2>,
-        N1: Iterator<Item = R>,
-        N2: Iterator<Item = R2>,
-        R: std::convert::From<R2>,
+        B: Getter<RB, ITB>,
+        R: std::convert::From<RB>,
+        ITB:Iterator<Item=RB>,
     {
         Holder {
             a: self,
@@ -38,24 +37,24 @@ pub trait Getter<'a>: Sized {
         }
     }
 
-    fn grab(&'a self) -> grabber::Grabber<'a, Self> {
+    fn grab<'a>(&'a self) -> grabber::Grabber<'a, Self,R,IT> {
         grabber::Grabber::new(self)
     }
 }
 
-pub struct Holder<'a, A, B, R> {
-    a: &'a A,
-    b: &'a B,
+pub struct Holder<A, B, R,RB> {
+    a: A,
+    b: B,
     _r: Option<R>, //Just to help lock types
+    _rb:Option<RB>,
 }
 
-impl<'a, A: Getter<'a>, B: Getter<'a>, R> Holder<'a, A, B, R>
-where
-    A::Iter: IntoIterator,
-    B::Iter: IntoIterator,
+impl<A, RA,  B, RB> Holder<A, B, RA,RB>
+    where
+    RA:std::convert::From<RB>,
 {
-    pub fn new(a: &'a A, b: &'a B) -> Holder<'a, A, B, R> {
-        Holder { a, b, _r: None }
+    pub fn new(a: A, b: B) -> Self {
+        Holder { a, b, _r: None ,_rb:None}
     }
 }
 
@@ -79,23 +78,21 @@ where
     }
 }
 
-impl<'a, R, R2, N1, N2, A: Getter<'a>, B: Getter<'a>> Getter<'a> for Holder<'a, A, B, R>
+impl<A, RA, IA, B, RB,IB> Getter<RA, OrIter<IA, IB>> for Holder<A, B, RA,RB>
 where
-    A::Iter: IntoIterator<IntoIter = N1, Item = R>,
-    B::Iter: IntoIterator<IntoIter = N2, Item = R2>,
-    N1: Iterator<Item = R>,
-    N2: Iterator<Item = R2>,
-    R: std::convert::From<R2>,
+    A: Getter<RA, IA>,
+    B: Getter<RB, IB>,
+    IA:Iterator<Item=RA>,
+    IB:Iterator<Item=RB>,
+    RA: std::convert::From<RB>,
 {
-    type Iter = OrIter<N1, N2>;
-
-    fn value<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<String> {
+    fn value<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<RA> {
         self.a
             .value(s.as_ref(), f)
             .or_else(|| self.b.value(s.as_ref(), f))
     }
 
-    fn values<S: AsRef<str>>(&'a self, s: S, f: Filter) -> Option<Self::Iter> {
+    fn values<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<OrIter<IA,IB>> {
         if let Some(r) = self.a.values(s.as_ref(), f) {
             return Some(OrIter::A(r.into_iter()));
         }
