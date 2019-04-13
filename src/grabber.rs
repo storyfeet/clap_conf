@@ -5,6 +5,7 @@ pub struct Grabber<'a, H, R, I>
 where
     I: Iterator<Item = R>,
     H: Getter<R, I>,
+    R:PartialEq+std::fmt::Debug,
 {
     h: &'a H,
     res: Option<R>,
@@ -15,6 +16,7 @@ impl<'a, H, R, I> Grabber<'a, H, R, I>
 where
     I: Iterator<Item = R>,
     H: Getter<R, I>,
+    R:PartialEq+std::fmt::Debug,
 {
     pub fn new(h: &'a H) -> Self {
         Grabber {
@@ -25,8 +27,10 @@ where
     }
 
     pub fn op<S: AsRef<str>>(mut self, s: S, f: Filter) -> Self {
+        println!("Getting {:?}, res = {:?}",f,self.res);
         if self.res == None {
             self.res = self.h.value(s, f);
+            println!("Setting {:?}, res = {:?}",f,self.res);
         }
         self
     }
@@ -42,7 +46,7 @@ where
         self.op(s, Filter::Arg)
     }
 
-    pub fn done(self) -> Option<String> {
+    pub fn done(self) -> Option<R> {
         self.res
     }
 }

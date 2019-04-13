@@ -12,16 +12,16 @@ fn dig<S: AsRef<str>, I: Iterator<Item = S>>(v: &Value, mut i: I) -> Option<&Val
     }
 }
 
-impl <'a> Getter<&'a Value,std::slice::Iter<'a, Value>> for Value {
+impl<'a> Getter<&'a Value, std::slice::Iter<'a, Value>> for &'a Value {
     fn value<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<&'a Value> {
         if f != Filter::Conf {
             return None;
         }
         let r = dig(self, s.as_ref().split("."))?;
-        Some(r.as_str()?.to_string())
+        Some(r)
     }
 
-    fn values<S: AsRef<str>>(&'a self, s: S, f: Filter) -> Option<std::slice::Iter<'a,Value>> {
+    fn values<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<std::slice::Iter<'a, Value>> {
         if f != Filter::Conf {
             return None;
         }
@@ -41,20 +41,20 @@ mod tomltests {
     #[test]
     fn test_load() {
         let t: Value = "[a.b.c]\ncar=\"red\"".parse().unwrap();
-        let r = t.value("a.b.c.car", Filter::Conf).unwrap();
-        assert_eq!(r, "red");
+        let r = (&t).value("a.b.c.car", Filter::Conf).unwrap();
+        assert_eq!(r.as_str().unwrap(), "red");
 
         let t: Value = "[[a.b]]\ncar=\"red\"\n[[a.b]]\ncar=\"green\""
             .parse()
             .unwrap();
-        let r = t.value("a.b.1.car", Filter::Conf).unwrap();
-        assert_eq!(r, "green");
+        let r = (&t).value("a.b.1.car", Filter::Conf).unwrap();
+        assert_eq!(r.as_str().unwrap(), "green");
     }
 
     #[test]
     fn test_iter() {
         let t: Value = "[a.b]\ncar=[\"red\",\"green\"]".parse().unwrap();
-        let mut r = t
+        let mut r = (&t)
             .values("a.b.car", Filter::Conf)
             .expect("Could not get values");
         assert_eq!(r.next().unwrap().as_str().unwrap(), "red");
