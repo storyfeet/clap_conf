@@ -3,6 +3,7 @@ pub mod env;
 pub mod grabber;
 pub mod tomlget;
 pub mod convert;
+pub mod replace;
 
 pub use clap::{clap_app, crate_version, ArgMatches, Values};
 

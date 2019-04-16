@@ -1,3 +1,4 @@
+use crate::replace::{replace_env, ConfError};
 use crate::{Filter, Getter};
 
 #[derive(Clone)]
@@ -5,7 +6,7 @@ pub struct Grabber<'a, H, R, I>
 where
     I: Iterator<Item = R>,
     H: Getter<R, I>,
-    R:PartialEq+std::fmt::Debug,
+    R: PartialEq + std::fmt::Debug,
 {
     h: &'a H,
     res: Option<R>,
@@ -16,7 +17,7 @@ impl<'a, H, R, I> Grabber<'a, H, R, I>
 where
     I: Iterator<Item = R>,
     H: Getter<R, I>,
-    R:PartialEq+std::fmt::Debug,
+    R: PartialEq + std::fmt::Debug,
 {
     pub fn new(h: &'a H) -> Self {
         Grabber {
@@ -27,10 +28,10 @@ where
     }
 
     pub fn op<S: AsRef<str>>(mut self, s: S, f: Filter) -> Self {
-        println!("Getting {:?}, res = {:?}",f,self.res);
+        println!("Getting {:?}, res = {:?}", f, self.res);
         if self.res == None {
             self.res = self.h.value(s, f);
-            println!("Setting {:?}, res = {:?}",f,self.res);
+            println!("Setting {:?}, res = {:?}", f, self.res);
         }
         self
     }
@@ -48,5 +49,16 @@ where
 
     pub fn done(self) -> Option<R> {
         self.res
+    }
+}
+
+impl<'a, H, R, I> Grabber<'a, H, R, I>
+where
+    I: Iterator<Item = R>,
+    H: Getter<R, I>,
+    R: PartialEq + std::fmt::Debug + AsRef<str>,
+{
+    pub fn rep_env(self) -> Result<String, ConfError> {
+        replace_env(self.res.ok_or("No Res")?.as_ref())
     }
 }
