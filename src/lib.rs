@@ -1,9 +1,9 @@
 pub mod clapget;
+pub mod convert;
 pub mod env;
 pub mod grabber;
-pub mod tomlget;
-pub mod convert;
 pub mod replace;
+pub mod tomlget;
 
 pub use clap::{clap_app, crate_version, ArgMatches, Values};
 
@@ -29,11 +29,12 @@ where
     fn value<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<R>;
     fn values<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<IT>;
 
-    fn wrap<R2,F:Fn(R)->R2>(self,f:F)->convert::Wrapper<Self,F>{
-        convert::Wrapper{
-            g:self,
-            f,
-        }
+    fn sub<S: AsRef<str>>(&self, _: S, _: Filter) -> bool {
+        return false;
+    }
+
+    fn wrap<R2, F: Fn(R) -> R2>(self, f: F) -> convert::Wrapper<Self, F> {
+        convert::Wrapper { g: self, f }
     }
 
     fn hold<B, RB, ITB>(self, b: B) -> convert::Holder<Self, B, R, RB>
@@ -58,7 +59,7 @@ mod tests {
     fn try_holder() {
         let a = ArgMatches::new();
         let tml: toml::Value = "[a]\ncar=\"red\"".parse().unwrap();
-        let tml2 = (&tml).wrap(|r|r.as_str().unwrap());
+        let tml2 = (&tml).wrap(|r| r.as_str().unwrap());
         let ce = clap_env(&a).hold(tml2);
 
         assert_eq!(ce.value("ss", Filter::Arg), None);
@@ -72,10 +73,7 @@ mod tests {
             Some("/home/matthew/scripts/rust/mlibs/clap_conf".to_string())
         );
 
-        assert_eq!(
-            ce.grab().conf("a.car").done(),
-            Some("red".to_string())
-            );
+        assert_eq!(ce.grab().conf("a.car").done(), Some("red".to_string()));
 
         /* assert_eq!(
             g.env("PWD").done(),

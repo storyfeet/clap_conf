@@ -67,6 +67,10 @@ where
         }
         None
     }
+
+    fn sub<S: AsRef<str>>(&self, s: S, f: Filter) -> bool {
+        self.a.sub(s.as_ref(), f) || self.b.sub(s, f)
+    }
 }
 
 pub struct ConvIter<I, F> {
@@ -107,5 +111,9 @@ where
             it: i,
             f: self.f.clone(),
         })
+    }
+
+    fn sub<S: AsRef<str>>(&self, s: S, f: Filter) -> bool {
+        self.g.sub(s, f)
     }
 }
