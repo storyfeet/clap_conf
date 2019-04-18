@@ -2,15 +2,19 @@ pub mod clapget;
 pub mod convert;
 pub mod env;
 pub mod grabber;
+pub mod prelude;
 pub mod replace;
 pub mod tomlget;
-pub mod prelude;
 
 pub use clap::{clap_app, crate_version, ArgMatches, Values};
 
-pub fn clap_env<'a, 'b>(
+pub fn clap_env<'a, 'b, X: Iterator<Item = String>>(a: &'b ArgMatches<'a>) -> impl Getter<String> {
+    env::Enver {}.hold(a)
+}
+
+pub fn clap_toml_env<'a, 'b, X: Iterator<Item = String>, S: AsRef<str>, IT: Iterator<Item = S>>(
     a: &'b ArgMatches<'a>,
-) -> convert::Holder<env::Enver, &'b ArgMatches<'a>, String, &'b str> {
+) -> impl Getter<String> {
     env::Enver {}.hold(a)
 }
 
@@ -30,8 +34,8 @@ where
     fn value<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<R>;
     fn values<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<IT>;
 
-    fn bool_flag<S:AsRef<str>>(&self,s:S,f:Filter)->bool{
-        self.value(s,f).is_some()
+    fn bool_flag<S: AsRef<str>>(&self, s: S, f: Filter) -> bool {
+        self.value(s, f).is_some()
     }
 
     fn sub<S: AsRef<str>>(&self, _: S, _: Filter) -> bool {
