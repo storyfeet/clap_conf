@@ -1,14 +1,20 @@
 use crate::{Filter, Getter};
 use clap::{ArgMatches, Values};
 
-fn dig<'a, 'b,'c,IT:Iterator<Item=&'c str>>(m: &'a ArgMatches<'b>,down:&'c str,mut i:IT) -> Option<(&'a ArgMatches<'b>,&'c str)> {
-    match i.next(){
-        None=>Some((m,down)),
-        Some(s)=>
-            dig(m.subcommand_matches(s)?,s,i),
-        
+fn _dig<'a, 'b, 'c, IT: Iterator<Item = &'c str>>(
+    m: &'a ArgMatches<'b>,
+    down: &'c str,
+    mut i: IT,
+) -> Option<(&'a ArgMatches<'b>, &'c str)> {
+    match i.next() {
+        None => Some((m, down)),
+        Some(s) => _dig(m.subcommand_matches(down)?, s, i),
     }
+}
 
+fn dig<'a, 'b, 'c>(m: &'a ArgMatches<'b>, s: &'c str) -> Option<(&'a ArgMatches<'b>, &'c str)> {
+    let mut it = s.split(".");
+    _dig(m, it.next()?, it)
 }
 
 impl<'a, 'b> Getter<&'a str, Values<'a>> for &'a ArgMatches<'b> {
@@ -16,8 +22,7 @@ impl<'a, 'b> Getter<&'a str, Values<'a>> for &'a ArgMatches<'b> {
         if f != Filter::Arg {
             return None;
         }
-        let mut it = s.as_ref().split(".");
-        let (r,dot_last) = dig(self,it.next()?,it)?;
+        let (r, dot_last) = dig(self, s.as_ref())?;
         r.value_of(dot_last)
     }
 
@@ -25,29 +30,45 @@ impl<'a, 'b> Getter<&'a str, Values<'a>> for &'a ArgMatches<'b> {
         if f != Filter::Arg {
             return None;
         }
-        let mut it = s.as_ref().split(".");
-        let (r,dot_last) = dig(self,it.next()?,it)?;
+        let (r, dot_last) = dig(self, s.as_ref())?;
         r.values_of(dot_last)
     }
 
-    fn sub<S:AsRef<str>>(&self,s:S,f:Filter)->bool{
+    fn sub<S: AsRef<str>>(&self, s: S, f: Filter) -> bool {
         if f != Filter::Arg {
             return false;
         }
-        let mut it = s.as_ref().split(".");
-        let (r,dot_last) = match dig(self,it.next().unwrap(),it){
-            Some(v)=>v,
-            None=>return false,
+        let (r, dot_last) = match dig(self, s.as_ref()) {
+            Some(v) => v,
+            None => return false,
         };
-        match r.subcommand_matches(dot_last){
-            Some(_)=>true,
-            None=>false,
+        match r.subcommand_matches(dot_last) {
+            Some(_) => true,
+            None => false,
         }
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::clap_app;
+    //TODO add tests involving clap_app::App::get_matches_from
+    #[test]
+    pub fn test_sub_get() {
+        let m = clap_app!(
+            test_app=>
+                (@arg a : -a +takes_value "astuff")
+                (@subcommand subby =>
+                    (@arg b: -b +takes_value "bstuff")
+                        )
 
-#[cfg(Test)]
-mod tests{
-   //TODO add tests involving clap_app::App::get_matches_from 
+        )
+        .get_matches_from("test_app -a hi subby -b world".split(" "));
+
+        assert_eq!((&m).sub("a", Filter::Arg), false, "A");
+        assert_eq!((&m).grab().arg("a").done(), Some("hi"), "HI");
+        assert_eq!((&m).sub("subby", Filter::Arg), true, "--Sub Subby--");
+        assert_eq!((&m).grab().arg("subby.b").done(), Some("world"), "C");
+    }
 }
