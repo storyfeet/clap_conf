@@ -52,6 +52,10 @@ where
     IB: Iterator<Item = RB>,
     RA: std::convert::From<RB>,
 {
+    fn bool_flag<S: AsRef<str>>(&self, s: S, f: Filter) -> bool {
+        self.a.bool_flag(s.as_ref(), f) || self.b.bool_flag(s, f)
+    }
+
     fn value<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<RA> {
         self.a
             .value(s.as_ref(), f)
@@ -102,6 +106,9 @@ where
     CR: PartialEq + Debug,
     R: PartialEq + Debug,
 {
+    fn bool_flag<S: AsRef<str>>(&self, s: S, f: Filter) -> bool {
+        self.g.bool_flag(s, f)
+    }
     fn value<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<R> {
         self.g.value(s, f).map(&self.f)
     }

@@ -4,6 +4,7 @@ pub mod env;
 pub mod grabber;
 pub mod replace;
 pub mod tomlget;
+pub mod prelude;
 
 pub use clap::{clap_app, crate_version, ArgMatches, Values};
 
@@ -28,6 +29,10 @@ where
 {
     fn value<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<R>;
     fn values<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<IT>;
+
+    fn bool_flag<S:AsRef<str>>(&self,s:S,f:Filter)->bool{
+        self.value(s,f).is_some()
+    }
 
     fn sub<S: AsRef<str>>(&self, _: S, _: Filter) -> bool {
         return false;

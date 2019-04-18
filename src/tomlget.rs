@@ -1,5 +1,29 @@
 use crate::{Filter, Getter};
+use crate::replace::{replace_env,ConfError};
 use toml::Value;
+
+
+fn load_first_toml<I:AsRef<str>,IT:IntoIterator<Item=I>>(i:IT)->Result<Value,ConfError>{
+
+    for s in i {
+        let s = match replace_env(s.as_ref()){
+            Ok(s)=>s,
+            Err(_)=>continue,
+        };
+        let f = match std::fs::read_to_string(s) {
+            Ok(r)=>r,
+            Err(_) =>continue,
+        };
+        match f.parse::<Value>() {
+            Ok(r)=>return Ok(r),
+            Err(_) =>continue,
+        }
+        
+    }
+    Err("could not load".into()) 
+    
+
+}
 
 fn dig<S: AsRef<str>, I: Iterator<Item = S>>(v: &Value, mut i: I) -> Option<&Value> {
     match i.next() {
@@ -13,6 +37,16 @@ fn dig<S: AsRef<str>, I: Iterator<Item = S>>(v: &Value, mut i: I) -> Option<&Val
 }
 
 impl<'a> Getter<&'a Value, std::slice::Iter<'a, Value>> for &'a Value {
+    fn bool_flag<S: AsRef<str>>(&self, s: S, f: Filter) -> bool {
+        if f != Filter::Conf {
+            return false;
+        }
+        match dig(self, s.as_ref().split(".")) {
+            Some(v) => v.as_bool().unwrap_or(false),
+            None => false,
+        }
+    }
+
     fn value<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<&'a Value> {
         if f != Filter::Conf {
             return None;
