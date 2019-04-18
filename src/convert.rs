@@ -1,23 +1,28 @@
 use crate::{Filter, Getter};
 use std::fmt::Debug;
+use std::marker::PhantomData;
 
-pub struct Holder<A, B, R, RB> {
+pub struct Holder<'a,A, B, R, RB> {
     a: A,
     b: B,
-    _r: Option<R>, //Just to help lock types
-    _rb: Option<RB>,
+    _r: PhantomData<&'a R>, //Just to help lock types
+    _rb: PhantomData<RB>,
+
 }
 
-impl<A, RA, B, RB> Holder<A, B, RA, RB>
+impl<'a,A, RA, B, RB> Holder<'a,A, B, RA, RB>
 where
-    RA: std::convert::From<RB>,
+    A:Getter<'a,RA>,
+    B:Getter<'a,RB>,
+    RA: std::convert::From<RB>+Debug+PartialEq,
+    RB:Debug+PartialEq,
 {
     pub fn new(a: A, b: B) -> Self {
         Holder {
             a,
             b,
-            _r: None,
-            _rb: None,
+            _r: PhantomData,
+            _rb: PhantomData,
         }
     }
 }
@@ -42,16 +47,17 @@ where
     }
 }
 
-impl<A, RA, IA, B, RB, IB> Getter<RA, OrIter<IA, IB>> for Holder<A, B, RA, RB>
+impl<'a,A, RA, B, RB> Getter<'a,RA> for Holder<'a,A, B, RA, RB>
 where
-    A: Getter<RA, IA>,
-    B: Getter<RB, IB>,
+    A: Getter<'a,RA>,
+    B: Getter<'a,RB>,
+    A::Iter: Iterator<Item = RA>,
+    B::Iter: Iterator<Item = RB>,
     RA: PartialEq + std::fmt::Debug,
     RB: PartialEq + Debug,
-    IA: Iterator<Item = RA>,
-    IB: Iterator<Item = RB>,
     RA: std::convert::From<RB>,
 {
+    type Iter = OrIter<A::Iter, B::Iter>;
     fn bool_flag<S: AsRef<str>>(&self, s: S, f: Filter) -> bool {
         self.a.bool_flag(s.as_ref(), f) || self.b.bool_flag(s, f)
     }
@@ -62,7 +68,7 @@ where
             .or_else(|| self.b.value(s, f).map(|r| r.into()))
     }
 
-    fn values<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<OrIter<IA, IB>> {
+    fn values<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<OrIter<A::Iter, B::Iter>> {
         if let Some(r) = self.a.values(s.as_ref(), f) {
             return Some(OrIter::A(r.into_iter()));
         }
@@ -93,19 +99,29 @@ where
     }
 }
 
-pub struct Wrapper<G, F> {
+pub struct Wrapper<G, F,CR> 
+{
     pub g: G,
     pub f: F,
+    _cr:PhantomData<CR>,
 }
 
-impl<G, R, CR, CI, F> Getter<R, ConvIter<CI, F>> for Wrapper<G, F>
+impl<G,F,CR> Wrapper<G,F,CR>{
+    pub fn new(g:G,f:F)->Self{
+        Wrapper{
+            g,f,_cr:PhantomData,
+        }
+    }
+}
+
+impl<'a,G, R, F,CR> Getter<'a,R> for Wrapper<G, F,CR>
 where
-    G: Getter<CR, CI>,
-    CI: Iterator<Item = CR>,
+    G: Getter<'a,CR>,
     F: Fn(CR) -> R + Clone,
     CR: PartialEq + Debug,
     R: PartialEq + Debug,
 {
+    type Iter = ConvIter<G::Iter, F>;
     fn bool_flag<S: AsRef<str>>(&self, s: S, f: Filter) -> bool {
         self.g.bool_flag(s, f)
     }
@@ -113,10 +129,10 @@ where
         self.g.value(s, f).map(&self.f)
     }
 
-    fn values<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<ConvIter<CI, F>> {
-        self.g.values(s, f).map(|i| ConvIter {
-            it: i,
-            f: self.f.clone(),
+    fn values<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<Self::Iter> {
+        Some(ConvIter{
+            it:self.g.values(s,f)?,
+            f:self.f.clone(),
         })
     }
 

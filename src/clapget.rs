@@ -17,14 +17,15 @@ fn dig<'a, 'b, 'c>(m: &'a ArgMatches<'b>, s: &'c str) -> Option<(&'a ArgMatches<
     _dig(m, it.next()?, it)
 }
 
-impl<'a, 'b> Getter<&'a str, Values<'a>> for &'a ArgMatches<'b> {
-    fn bool_flag<S:AsRef<str>>(&self,s:S,f:Filter)->bool{
-        if f != Filter::Arg{
+impl<'a, 'b> Getter<'a,&'a str> for &'a ArgMatches<'b> {
+    type Iter = Values<'a>;
+    fn bool_flag<S: AsRef<str>>(&self, s: S, f: Filter) -> bool {
+        if f != Filter::Arg {
             return false;
         }
-        let (r,dot_last) = match dig(self,s.as_ref()){
-            Some(v)=>v,
-            None =>return false,
+        let (r, dot_last) = match dig(self, s.as_ref()) {
+            Some(v) => v,
+            None => return false,
         };
         r.is_present(dot_last)
     }
@@ -77,12 +78,12 @@ mod tests {
         )
         .get_matches_from("test_app -a hi subby -b world".split(" "));
 
-        let mm  = &m;
+        let mm = &m;
 
         assert_eq!(mm.sub("a", Filter::Arg), false, "A");
         assert_eq!(mm.grab().arg("a").done(), Some("hi"), "HI");
         assert_eq!(mm.sub("subby", Filter::Arg), true, "--Sub Subby--");
         assert_eq!(mm.grab().arg("subby.b").done(), Some("world"), "C");
-        assert_eq!(mm.bool_flag("a",Filter::Arg),true);
+        assert_eq!(mm.bool_flag("a", Filter::Arg), true);
     }
 }

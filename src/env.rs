@@ -4,18 +4,18 @@ pub static EV: Enver = Enver {};
 
 pub struct Enver {}
 
-impl Getter<String, std::option::IntoIter<String>> for Enver {
+impl<'a> Getter<'a,String> for Enver {
+    type Iter = std::option::IntoIter<String>;
     fn value<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<String> {
         if f == Filter::Env {
             return std::env::var(s.as_ref()).ok();
         }
         None
     }
-    fn values<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<std::option::IntoIter<String>> {
+    fn values<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<Self::Iter> {
         if f == Filter::Env {
             return Some(std::env::var(s.as_ref()).ok().into_iter());
         }
         None
     }
 }
-

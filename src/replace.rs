@@ -1,16 +1,16 @@
 use failure_derive::*;
 
-#[derive(Clone,Fail,Debug)]
+#[derive(Clone, Fail, Debug)]
 pub enum ConfError {
-    #[fail(display="Syntax Error Parsing String")]
+    #[fail(display = "Syntax Error Parsing String")]
     Syntax,
-    #[fail(display="Environment variable not found")]
+    #[fail(display = "Environment variable not found")]
     VarNotFound,
-    #[fail(display="Could not load file")]
+    #[fail(display = "Could not load file")]
     LoadError,
-    #[fail(display="{}",_0)]
+    #[fail(display = "{}", _0)]
     Mess(&'static str),
-    #[fail(display="{}",_0)]
+    #[fail(display = "{}", _0)]
     Message(String),
 }
 
@@ -20,18 +20,22 @@ impl From<&'static str> for ConfError {
     }
 }
 
-impl From<std::io::Error> for ConfError{
-    fn from(_:std::io::Error)->Self{
+impl From<std::io::Error> for ConfError {
+    fn from(_: std::io::Error) -> Self {
         ConfError::LoadError
     }
 }
 
-impl From<std::env::VarError> for ConfError{
-    fn from(_:std::env::VarError) ->Self{
+impl From<std::env::VarError> for ConfError {
+    fn from(_: std::env::VarError) -> Self {
         ConfError::VarNotFound
     }
 }
-
+impl From<toml::de::Error> for ConfError {
+    fn from(_: toml::de::Error) -> Self {
+        ConfError::Syntax
+    }
+}
 
 type Job<E> = Fn(&str) -> Result<String, E>;
 

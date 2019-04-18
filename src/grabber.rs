@@ -5,7 +5,7 @@ use crate::{Filter, Getter};
 pub struct Grabber<'a, H, R, I>
 where
     I: Iterator<Item = R>,
-    H: Getter<R, I>,
+    H: Getter<'a,R>,
     R: PartialEq + std::fmt::Debug,
 {
     h: &'a H,
@@ -16,7 +16,7 @@ where
 impl<'a, H, R, I> Grabber<'a, H, R, I>
 where
     I: Iterator<Item = R>,
-    H: Getter<R, I>,
+    H: Getter<'a,R>,
     R: PartialEq + std::fmt::Debug,
 {
     pub fn new(h: &'a H) -> Self {
@@ -55,7 +55,7 @@ where
 impl<'a, H, R, I> Grabber<'a, H, R, I>
 where
     I: Iterator<Item = R>,
-    H: Getter<R, I>,
+    H: Getter<'a, R>,
     R: PartialEq + std::fmt::Debug + AsRef<str>,
 {
     pub fn rep_env(self) -> Result<String, ConfError> {
