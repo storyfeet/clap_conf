@@ -35,7 +35,29 @@ fn dig<S: AsRef<str>, I: Iterator<Item = S>>(v: &Value, mut i: I) -> Option<&Val
     }
 }
 
+impl<'a> Getter<'a, String> for Value {
+    //This uses the Getter for &Value impl but has a different return type.
+    type Iter = std::vec::IntoIter<String>;
+    fn bool_flag<S: AsRef<str>>(&self, s: S, f: Filter) -> bool {
+        (&self).bool_flag(s, f)
+    }
 
+    fn value<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<String> {
+        match (&self).value(s,f)?{
+            Value::String(s)=>Some(s.clone()),
+            Value::Integer(i)=>Some(i.to_string()),
+            Value::Boolean(i)=>Some(i.to_string()),
+            Value::Float(f)=>Some(f.to_string()),
+            Value::Datetime(f)=>Some(f.to_string()),
+            _=>None,
+        }
+    }
+
+    fn values<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<std::vec::IntoIter<String>> {
+        let res:Vec<String> = (&self).values(s,f)?.filter_map(|v|v.as_str().map(|vr|vr.to_string())).collect();
+        Some(res.into_iter())
+    }
+}
 impl<'a> Getter<'a, &'a Value> for &'a Value {
     type Iter = std::slice::Iter<'a, Value>;
     fn bool_flag<S: AsRef<str>>(&self, s: S, f: Filter) -> bool {
@@ -76,20 +98,20 @@ mod tomltests {
     #[test]
     fn test_load() {
         let t: Value = "[a.b.c]\ncar=\"red\"".parse().unwrap();
-        let r = (&t).value("a.b.c.car", Filter::Conf).unwrap();
+        let r = (&&t).value("a.b.c.car", Filter::Conf).unwrap();
         assert_eq!(r.as_str().unwrap(), "red");
 
         let t: Value = "[[a.b]]\ncar=\"red\"\n[[a.b]]\ncar=\"green\""
             .parse()
             .unwrap();
-        let r = (&t).value("a.b.1.car", Filter::Conf).unwrap();
+        let r = (&&t).value("a.b.1.car", Filter::Conf).unwrap();
         assert_eq!(r.as_str().unwrap(), "green");
     }
 
     #[test]
     fn test_iter() {
         let t: Value = "[a.b]\ncar=[\"red\",\"green\"]".parse().unwrap();
-        let mut r = (&t)
+        let mut r = (&&t)
             .values("a.b.car", Filter::Conf)
             .expect("Could not get values");
         assert_eq!(r.next().unwrap().as_str().unwrap(), "red");

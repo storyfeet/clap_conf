@@ -6,11 +6,26 @@ pub mod prelude;
 pub mod replace;
 pub mod tomlget;
 
+use crate::convert::Holder;
+
 pub use clap::{clap_app, crate_version, ArgMatches, Values};
 
-pub fn clap_env<'a>(a: &'a ArgMatches<'a>) -> impl Getter<'a,String>{
+pub fn clap_env<'a,G:Getter<'a,&'a str>>(a: G) -> Holder<'a,env::Enver,G,String,&'a str> {
     //a.wrap(|v|v.to_string()).hold(env::Enver{})
-    env::Enver{}.hold(a)
+    env::Enver {}.hold(a)
+}
+
+pub fn with_toml_env<'a,G,S,IT>(
+    a:G ,
+    it: IT,
+) -> Holder<'a,Holder<'a,env::Enver,G,String,&'a str>,toml::Value,String,String> 
+    where
+    G:Getter<'a,&'a str>,
+    S: AsRef<str>,
+    IT: IntoIterator<Item = S> {
+    let tml =
+        tomlget::load_first_toml(a.value("config",Filter::Arg), it).unwrap_or(toml::Value::Boolean(false));
+    env::Enver {}.hold(a).hold(tml)
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -21,7 +36,7 @@ pub enum Filter {
     Other(char),
 }
 
-pub trait Getter<'a,R>: Sized
+pub trait Getter<'a, R>: Sized
 where
     R: PartialEq + std::fmt::Debug,
 {
@@ -37,13 +52,13 @@ where
         return false;
     }
 
-    fn wrap<R2, F: Fn(R) -> R2>(self, f: F) -> convert::Wrapper<Self, F,R> {
-        convert::Wrapper::new(self,f)
+    fn wrap<R2, F: Fn(R) -> R2>(self, f: F) -> convert::Wrapper<Self, F, R> {
+        convert::Wrapper::new(self, f)
     }
 
-    fn hold<B, RB>(self, b: B) -> convert::Holder<'a,Self, B, R, RB>
+    fn hold<B, RB>(self, b: B) -> convert::Holder<'a, Self, B, R, RB>
     where
-        B: Getter<'a,RB>,
+        B: Getter<'a, RB>,
         R: std::convert::From<RB>,
         RB: PartialEq + std::fmt::Debug,
         B::Iter: Iterator<Item = RB>,
@@ -56,6 +71,8 @@ where
     }
 }
 
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -63,10 +80,10 @@ mod tests {
     fn try_holder() {
         let a = ArgMatches::new();
         let tml: toml::Value = "[a]\ncar=\"red\"".parse().unwrap();
-        let tml2 = (&tml).wrap(|r| r.as_str().unwrap());
-        //let ce = clap_env(&a).hold(tml2);
-        let e = env::Enver{};
-        let ce = e.hold(&a).hold(tml2);
+        //        let tml2 = (&tml).wrap(|r| r.as_str().unwrap());
+        let ce = clap_env(&a).hold(tml);
+        //let e = env::Enver {};
+        //let ce = e.hold(&a).hold(tml);
 
         assert_eq!(ce.value("ss", Filter::Arg), None);
         assert_eq!(
@@ -88,12 +105,11 @@ mod tests {
         */
     }
 
-    /*#[test]
+    #[test]
     fn test_grab() {
         let a = ArgMatches::new();
-        let tml: toml::Value = "a=\"cat\"".parse().unwrap();
-        //let ce = clap_env(&a).hold(tml);
+        let r = with_toml_env(&a, &["test_data/test1.toml"]);
+        assert_eq!(r.grab().conf("a.b.c").done(), Some("hello".to_string()));
+    }
 
-        //assert_eq!(ce.grab().conf("a").done(), Some("cat"));
-    }*/
 }
