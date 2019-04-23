@@ -5,7 +5,7 @@ use crate::{Filter, Getter};
 pub struct Grabber<'a, H, R, I>
 where
     I: Iterator<Item = R>,
-    H: Getter<'a,R>,
+    H: Getter<'a, R>,
     R: PartialEq + std::fmt::Debug,
 {
     h: &'a H,
@@ -16,7 +16,7 @@ where
 impl<'a, H, R, I> Grabber<'a, H, R, I>
 where
     I: Iterator<Item = R>,
-    H: Getter<'a,R>,
+    H: Getter<'a, R>,
     R: PartialEq + std::fmt::Debug,
 {
     pub fn new(h: &'a H) -> Self {
@@ -28,10 +28,8 @@ where
     }
 
     pub fn op<S: AsRef<str>>(mut self, s: S, f: Filter) -> Self {
-        println!("Getting {:?}, res = {:?}", f, self.res);
         if self.res == None {
             self.res = self.h.value(s, f);
-            println!("Setting {:?}, res = {:?}", f, self.res);
         }
         self
     }
@@ -49,6 +47,13 @@ where
 
     pub fn done(self) -> Option<R> {
         self.res
+    }
+
+    pub fn def<V>(self, v: V) -> R
+    where
+        R: From<V>,
+    {
+        self.res.unwrap_or(v.into())
     }
 }
 

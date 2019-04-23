@@ -1,4 +1,3 @@
-pub use crate::Filter;
-pub use crate::Getter;
+pub use crate::{with_toml_env, Filter, Getter};
 
 pub use clap::{clap_app, crate_version};
