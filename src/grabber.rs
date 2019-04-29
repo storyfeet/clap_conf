@@ -66,4 +66,26 @@ where
     pub fn rep_env(self) -> Result<String, ConfError> {
         replace_env(self.res.ok_or("No Res")?.as_ref())
     }
+
+    pub fn ask<S: AsRef<str>>(self, s: S) -> Result<String, ConfError> {
+        if let Some(r) = self.res {
+            return Ok(r.as_ref().to_string());
+        }
+        println!("{}\n>", s.as_ref());
+        let mut res = String::new();
+        std::io::stdin().read_line(&mut res)?;
+        Ok(res)
+    }
+
+    pub fn ask_def<S: AsRef<str>>(self, s: S, def: S) -> String {
+        match self.ask(s) {
+            Ok(r) => {
+                if r == "".to_string() {
+                    return def.as_ref().to_string();
+                }
+                r
+            }
+            Err(_) => def.as_ref().to_string(),
+        }
+    }
 }
