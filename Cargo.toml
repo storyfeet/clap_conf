@@ -6,8 +6,7 @@ edition = "2018"
 keywords = ["Command","Line","Arguments","Environment","config"]
 license = "MIT"
 repository = "https://github.com/storyfeet/clap_conf"
-description = "A library to unify commandline arguments with config files and environment variables. And make it easier for users to tell your program how to behave across the three main input sources
-"
+description = "A library to unify commandline arguments with config files and environment variables. And make it easier for users to tell your program how to behave across the three main input sources"
 readme = "readme.md"
 
 [dependencies]
