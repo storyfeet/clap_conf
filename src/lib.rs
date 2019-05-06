@@ -1,3 +1,35 @@
+//! Clap Conf
+//! =========
+//!
+//! Use this library to unify how you get configuration options from
+//!
+//! * The command line arguments
+//! * Config Files
+//! * Environmant Variables
+//!
+//!
+//! Basic Usage
+//! ----------
+//!
+//! ```
+//! use clap_conf::prelude::*;
+//!
+//! let matches = clap_app!(my_app=>
+//!     (@arg filename:-f +takes_value "the input filename")
+//!     //...
+//! ).get_matches();
+//!
+//! let cfg = with_toml_env(&matches,&["toml/config/locations"]);
+//!
+//! //the result must be a String as std::env::var has to return a String not a pointer
+//! let filename =
+//! cfg.grab().arg("filename").conf("input.filename").env("MY_APP_INPUT_FILE").def("default.file");
+//!
+//! //if the arguments were supplied this would return something else.
+//! assert_eq!(filename,"default.file".to_string());
+//!
+//! ```
+
 pub mod clapget;
 pub mod convert;
 pub mod env;
@@ -10,21 +42,22 @@ use crate::convert::Holder;
 
 pub use clap::{clap_app, crate_version, ArgMatches, Values};
 
-pub fn clap_env<'a,G:Getter<'a,&'a str>>(a: G) -> Holder<'a,env::Enver,G,String,&'a str> {
+pub fn clap_env<'a, G: Getter<'a, &'a str>>(a: G) -> Holder<'a, env::Enver, G, String, &'a str> {
     //a.wrap(|v|v.to_string()).hold(env::Enver{})
     env::Enver {}.hold(a)
 }
 
-pub fn with_toml_env<'a,G,S,IT>(
-    a:G ,
+pub fn with_toml_env<'a, G, S, IT>(
+    a: G,
     it: IT,
-) -> Holder<'a,Holder<'a,env::Enver,G,String,&'a str>,toml::Value,String,String> 
-    where
-    G:Getter<'a,&'a str>,
+) -> Holder<'a, Holder<'a, env::Enver, G, String, &'a str>, toml::Value, String, String>
+where
+    G: Getter<'a, &'a str>,
     S: AsRef<str>,
-    IT: IntoIterator<Item = S> {
-    let tml =
-        tomlget::load_first_toml(a.value("config",Filter::Arg), it).unwrap_or(toml::Value::Boolean(false));
+    IT: IntoIterator<Item = S>,
+{
+    let tml = tomlget::load_first_toml(a.value("config", Filter::Arg), it)
+        .unwrap_or(toml::Value::Boolean(false));
     env::Enver {}.hold(a).hold(tml)
 }
 
@@ -70,8 +103,6 @@ where
         grabber::Grabber::new(self)
     }
 }
-
-
 
 #[cfg(test)]
 mod tests {

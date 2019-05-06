@@ -41,10 +41,10 @@ use clap_conf::prelude::*;
 let cfg = with_toml_env(&clap_matches,&["priority/config/location","another/possible/location"]);
 
 //something like this for every item.
-let filename = cfg.grab().args("filename").conf("filename").env("PROG_FILENAME").def("None");
+let filename = cfg.grab().arg("filename").conf("filename").env("PROG_FILENAME").def("None");
 
 //Or if you do not want to use a default and instead return an option.
-let filename = cfg.grab().args("filename").conf("filename").env("PROG_FILENAME").done();
+let filename = cfg.grab().arg("filename").conf("filename").env("PROG_FILENAME").done();
 
 ```
 
