@@ -72,7 +72,7 @@ pub enum Filter {
     Other(char),
 }
 
-pub trait Getter<'a, R>: Sized
+pub trait Getter<'a, R>: Sized 
 where
     R: PartialEq + std::fmt::Debug + std::fmt::Display,
 {
@@ -110,6 +110,10 @@ where
 
     fn grab(&'a self) -> grabber::Grabber<'a, Self, R, Self::Iter> {
         grabber::Grabber::new(self)
+    }
+
+    fn grab_local(&'a self) -> grabber::LocalGrabber<'a,Self,R,Self::Iter>{
+        grabber::LocalGrabber::new(self)
     }
 }
 

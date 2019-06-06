@@ -146,6 +146,7 @@ where
     }
 }
 
+#[derive(Debug)]
 pub struct Localizer<G> {
     local: PathBuf,
     g: G,

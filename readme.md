@@ -61,3 +61,10 @@ It's not ideal, but it's better than nothing.
 
 
 
+Changes
+---------
+
+## 1.1
+
+Added Localizer and now wraps toml Value in localizer for with\_toml\_env 
+Added Local Grabber so grab\_local should return a path, local to the config file selected
