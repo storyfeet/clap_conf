@@ -185,8 +185,9 @@ where
     }
 
     fn local_value<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<PathBuf> {
-        self.g
-            .local_value(s, f)
-            .map(|iv| self.local.clone().join(iv))
+        self.g.local_value(s, f).map(|iv| match iv.is_absolute() {
+            true => iv,
+            false => self.local.clone().join(iv),
+        })
     }
 }
