@@ -2,6 +2,7 @@ use crate::{Filter, Getter};
 
 pub static EV: Enver = Enver {};
 
+#[derive(Debug)]
 pub struct Enver {}
 
 impl<'a> Getter<'a,String> for Enver {

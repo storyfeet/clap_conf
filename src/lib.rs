@@ -39,6 +39,8 @@ pub mod replace;
 pub mod tomlget;
 
 use crate::convert::Holder;
+use std::path::PathBuf;
+use crate::replace::replace_env;
 
 pub use clap::{clap_app, crate_version, ArgMatches, Values};
 
@@ -71,11 +73,17 @@ pub enum Filter {
 
 pub trait Getter<'a, R>: Sized
 where
-    R: PartialEq + std::fmt::Debug,
+    R: PartialEq + std::fmt::Debug+ std::fmt::Display,
 {
     type Iter: Iterator<Item = R>;
     fn value<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<R>;
     fn values<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<Self::Iter>;
+
+    fn local_value<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<PathBuf> {
+        let v = self.value(s,f)?;
+        let s = replace_env(&v.to_string()).ok()?;
+        Some(PathBuf::from(s))
+    }
 
     fn bool_flag<S: AsRef<str>>(&self, s: S, f: Filter) -> bool {
         self.value(s, f).is_some()
@@ -93,7 +101,7 @@ where
     where
         B: Getter<'a, RB>,
         R: std::convert::From<RB>,
-        RB: PartialEq + std::fmt::Debug,
+        RB: PartialEq + std::fmt::Debug+std::fmt::Display,
         B::Iter: Iterator<Item = RB>,
     {
         convert::Holder::new(self, b)

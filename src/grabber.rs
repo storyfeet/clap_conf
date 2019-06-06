@@ -1,12 +1,12 @@
 use crate::replace::{replace_env, ConfError};
 use crate::{Filter, Getter};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Grabber<'a, H, R, I>
 where
     I: Iterator<Item = R>,
     H: Getter<'a, R>,
-    R: PartialEq + std::fmt::Debug,
+    R: PartialEq + std::fmt::Debug + std::fmt::Display,
 {
     h: &'a H,
     res: Option<R>,
@@ -17,7 +17,7 @@ impl<'a, H, R, I> Grabber<'a, H, R, I>
 where
     I: Iterator<Item = R>,
     H: Getter<'a, R>,
-    R: PartialEq + std::fmt::Debug,
+    R: PartialEq + std::fmt::Debug + std::fmt::Display,
 {
     pub fn new(h: &'a H) -> Self {
         Grabber {
@@ -61,7 +61,7 @@ impl<'a, H, R, I> Grabber<'a, H, R, I>
 where
     I: Iterator<Item = R>,
     H: Getter<'a, R>,
-    R: PartialEq + std::fmt::Debug + AsRef<str>,
+    R: PartialEq + std::fmt::Debug + AsRef<str> + std::fmt::Display,
 {
     pub fn rep_env(self) -> Result<String, ConfError> {
         replace_env(self.res.ok_or("No Res")?.as_ref())

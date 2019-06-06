@@ -13,7 +13,14 @@ pub fn load_first_toml<S: AsRef<str>, IT: IntoIterator<Item = S>>(
     i: IT,
 ) -> Result<Value, ConfError> {
     if let Some(m) = a {
-        return load_toml(m);
+        println!("config selected = {} ", m);
+        match load_toml(m) {
+            Ok(v) => return Ok(v),
+            Err(e) => {
+                println!("Could not load selected file {:?}", e);
+                return Err(e);
+            }
+        }
     }
     for s in i {
         match load_toml(s) {
@@ -43,18 +50,21 @@ impl<'a> Getter<'a, String> for Value {
     }
 
     fn value<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<String> {
-        match (&self).value(s,f)?{
-            Value::String(s)=>Some(s.clone()),
-            Value::Integer(i)=>Some(i.to_string()),
-            Value::Boolean(i)=>Some(i.to_string()),
-            Value::Float(f)=>Some(f.to_string()),
-            Value::Datetime(f)=>Some(f.to_string()),
-            _=>None,
+        match (&self).value(s, f)? {
+            Value::String(s) => Some(s.clone()),
+            Value::Integer(i) => Some(i.to_string()),
+            Value::Boolean(i) => Some(i.to_string()),
+            Value::Float(f) => Some(f.to_string()),
+            Value::Datetime(f) => Some(f.to_string()),
+            _ => None,
         }
     }
 
     fn values<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<std::vec::IntoIter<String>> {
-        let res:Vec<String> = (&self).values(s,f)?.filter_map(|v|v.as_str().map(|vr|vr.to_string())).collect();
+        let res: Vec<String> = (&self)
+            .values(s, f)?
+            .filter_map(|v| v.as_str().map(|vr| vr.to_string()))
+            .collect();
         Some(res.into_iter())
     }
 }
