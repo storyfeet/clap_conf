@@ -1,17 +1,19 @@
 use crate::replace::{replace_env, ConfError};
 use crate::{Filter, Getter};
+use crate::convert::Localizer;
 use toml::Value;
 
-pub fn load_toml<S: AsRef<str>>(s: S) -> Result<Value, ConfError> {
+pub fn load_toml<S: AsRef<str>>(s: S) -> Result<Localizer<Value>, ConfError> {
     let fname = replace_env(s.as_ref())?;
     let fcont = std::fs::read_to_string(fname)?;
-    fcont.parse::<Value>().map_err(|e| e.into())
+    let v = fcont.parse::<Value>()?;
+    Ok(Localizer::new(v,s.as_ref()))
 }
 
 pub fn load_first_toml<S: AsRef<str>, IT: IntoIterator<Item = S>>(
     a: Option<&str>,
     i: IT,
-) -> Result<Value, ConfError> {
+) -> Result<Localizer<Value>, ConfError> {
     if let Some(m) = a {
         println!("config selected = {} ", m);
         match load_toml(m) {

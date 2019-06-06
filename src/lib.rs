@@ -39,8 +39,9 @@ pub mod replace;
 pub mod tomlget;
 
 use crate::convert::Holder;
-use std::path::PathBuf;
+use crate::convert::Localizer;
 use crate::replace::replace_env;
+use std::path::PathBuf;
 
 pub use clap::{clap_app, crate_version, ArgMatches, Values};
 
@@ -52,14 +53,14 @@ pub fn clap_env<'a, G: Getter<'a, &'a str>>(a: G) -> Holder<'a, env::Enver, G, S
 pub fn with_toml_env<'a, G, S, IT>(
     a: G,
     it: IT,
-) -> Holder<'a, Holder<'a, env::Enver, G, String, &'a str>, toml::Value, String, String>
+) -> Holder<'a, Holder<'a, env::Enver, G, String, &'a str>, Localizer<toml::Value>, String, String>
 where
     G: Getter<'a, &'a str>,
     S: AsRef<str>,
     IT: IntoIterator<Item = S>,
 {
     let tml = tomlget::load_first_toml(a.value("config", Filter::Arg), it)
-        .unwrap_or(toml::Value::Boolean(false));
+        .unwrap_or(Localizer::new(toml::Value::Boolean(false), ""));
     env::Enver {}.hold(a).hold(tml)
 }
 
@@ -73,14 +74,14 @@ pub enum Filter {
 
 pub trait Getter<'a, R>: Sized
 where
-    R: PartialEq + std::fmt::Debug+ std::fmt::Display,
+    R: PartialEq + std::fmt::Debug + std::fmt::Display,
 {
     type Iter: Iterator<Item = R>;
     fn value<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<R>;
     fn values<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<Self::Iter>;
 
     fn local_value<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<PathBuf> {
-        let v = self.value(s,f)?;
+        let v = self.value(s, f)?;
         let s = replace_env(&v.to_string()).ok()?;
         Some(PathBuf::from(s))
     }
@@ -101,7 +102,7 @@ where
     where
         B: Getter<'a, RB>,
         R: std::convert::From<RB>,
-        RB: PartialEq + std::fmt::Debug+std::fmt::Display,
+        RB: PartialEq + std::fmt::Debug + std::fmt::Display,
         B::Iter: Iterator<Item = RB>,
     {
         convert::Holder::new(self, b)

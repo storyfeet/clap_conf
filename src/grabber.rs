@@ -1,3 +1,7 @@
+use std::fmt::{Debug, Display};
+use std::marker::PhantomData;
+use std::path::PathBuf;
+
 use crate::replace::{replace_env, ConfError};
 use crate::{Filter, Getter};
 
@@ -10,20 +14,20 @@ where
 {
     h: &'a H,
     res: Option<R>,
-    _i: Option<I>,
+    _i: PhantomData<I>,
 }
 
 impl<'a, H, R, I> Grabber<'a, H, R, I>
 where
     I: Iterator<Item = R>,
     H: Getter<'a, R>,
-    R: PartialEq + std::fmt::Debug + std::fmt::Display,
+    R: PartialEq + Debug + Display,
 {
     pub fn new(h: &'a H) -> Self {
         Grabber {
             h,
             res: None,
-            _i: None,
+            _i: PhantomData,
         }
     }
 
@@ -87,5 +91,60 @@ where
             }
             Err(_) => def.as_ref().to_string(),
         }
+    }
+}
+
+pub struct LocalGrabber<'a, G, R, I>
+where
+    I: Iterator<Item = R>,
+    G: Getter<'a, R>,
+    R: PartialEq + Debug + Display,
+{
+    g: &'a G,
+    res: Option<PathBuf>,
+    _i: PhantomData<I>,
+}
+
+impl<'a, G, R, I> LocalGrabber<'a, G, R, I>
+where
+    I: Iterator<Item = R>,
+    G: Getter<'a, R>,
+    R: PartialEq + Debug + Display,
+{
+    pub fn new(g: &'a G) -> Self {
+        LocalGrabber {
+            g,
+            res: None,
+            _i: PhantomData,
+        }
+    }
+
+    pub fn op<S: AsRef<str>>(mut self, s: S, f: Filter) -> Self {
+        if self.res == None {
+            self.res = self.g.local_value(s, f);
+        }
+        self
+    }
+
+    pub fn conf<S: AsRef<str>>(self, s: S) -> Self {
+        self.op(s, Filter::Conf)
+    }
+
+    pub fn env<S: AsRef<str>>(self, s: S) -> Self {
+        self.op(s, Filter::Env)
+    }
+    pub fn arg<S: AsRef<str>>(self, s: S) -> Self {
+        self.op(s, Filter::Arg)
+    }
+
+    pub fn done(self) -> Option<PathBuf> {
+        self.res
+    }
+
+    pub fn def<V>(self, v: V) -> PathBuf
+    where
+        PathBuf: From<V>,
+    {
+        self.res.unwrap_or(v.into())
     }
 }

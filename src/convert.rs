@@ -151,6 +151,18 @@ pub struct Localizer<G> {
     g: G,
 }
 
+impl<G> Localizer<G> {
+    pub fn new<P>(g: G, p: P) -> Self
+    where
+        PathBuf: From<P>,
+    {
+        Localizer {
+            g,
+            local: PathBuf::from(p),
+        }
+    }
+}
+
 impl<'a, R, G> Getter<'a, R> for Localizer<G>
 where
     R: PartialEq + Debug + Display,
