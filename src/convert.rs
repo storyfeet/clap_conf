@@ -80,6 +80,12 @@ where
         None
     }
 
+    fn local_value<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<PathBuf> {
+        self.a
+            .local_value(s.as_ref(), f)
+            .or_else(|| self.b.local_value(s, f).map(|r| r.into()))
+    }
+
     fn sub<S: AsRef<str>>(&self, s: S, f: Filter) -> bool {
         self.a.sub(s.as_ref(), f) || self.b.sub(s, f)
     }
@@ -139,6 +145,10 @@ where
             it: self.g.values(s, f)?,
             f: self.f.clone(),
         })
+    }
+
+    fn local_value<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<PathBuf> {
+        self.g.local_value(s, f)
     }
 
     fn sub<S: AsRef<str>>(&self, s: S, f: Filter) -> bool {

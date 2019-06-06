@@ -6,8 +6,8 @@ pub enum ConfError {
     Syntax,
     #[fail(display = "Environment variable not found")]
     VarNotFound,
-    #[fail(display = "Could not load file")]
-    LoadError,
+    #[fail(display = "Could not load file {}", 0)]
+    LoadError(String),
     #[fail(display = "{}", _0)]
     Mess(&'static str),
     #[fail(display = "{}", _0)]
@@ -21,8 +21,8 @@ impl From<&'static str> for ConfError {
 }
 
 impl From<std::io::Error> for ConfError {
-    fn from(_: std::io::Error) -> Self {
-        ConfError::LoadError
+    fn from(e: std::io::Error) -> Self {
+        ConfError::LoadError(e.to_string())
     }
 }
 

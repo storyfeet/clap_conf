@@ -1,13 +1,16 @@
+use crate::convert::Localizer;
 use crate::replace::{replace_env, ConfError};
 use crate::{Filter, Getter};
-use crate::convert::Localizer;
+use std::path::{Path, PathBuf};
 use toml::Value;
 
 pub fn load_toml<S: AsRef<str>>(s: S) -> Result<Localizer<Value>, ConfError> {
     let fname = replace_env(s.as_ref())?;
-    let fcont = std::fs::read_to_string(fname)?;
+    let fcont = std::fs::read_to_string(&fname)?;
     let v = fcont.parse::<Value>()?;
-    Ok(Localizer::new(v,s.as_ref()))
+    let fpar = PathBuf::from(PathBuf::from(fname).parent().unwrap_or(Path::new("./")));
+
+    Ok(Localizer::new(v, fpar))
 }
 
 pub fn load_first_toml<S: AsRef<str>, IT: IntoIterator<Item = S>>(
