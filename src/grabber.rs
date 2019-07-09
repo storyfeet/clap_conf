@@ -59,6 +59,10 @@ where
     {
         self.res.unwrap_or(v.into())
     }
+
+    pub fn req(self) -> Result<R, ConfError> {
+        self.res.ok_or("Item not supplied".into())
+    }
 }
 
 impl<'a, H, R, I> Grabber<'a, H, R, I>
