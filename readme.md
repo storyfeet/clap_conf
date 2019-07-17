@@ -64,6 +64,10 @@ It's not ideal, but it's better than nothing.
 Changes
 ---------
 
+## 1.3
+
+Added .req(), and .ask_default() to the Grabber. 
+
 ## 1.1
 
 Added Localizer and now wraps toml Value in localizer for with\_toml\_env 
