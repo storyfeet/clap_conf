@@ -14,6 +14,12 @@ pub enum ConfError {
     Message(String),
 }
 
+impl ConfError {
+    pub fn with_info(self, s: &str) -> Self {
+        ConfError::Message(format!("{} - {}", self, s))
+    }
+}
+
 impl From<&'static str> for ConfError {
     fn from(s: &'static str) -> Self {
         ConfError::Mess(s)
