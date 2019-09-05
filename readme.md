@@ -68,12 +68,14 @@ Changes
 
 Added a new method to ConfError called ```add_info(self, &str)->Self```
 So you can lazily add info to the message
+Added ```.req()``` to LocalGrabber;
 
 ## 1.3
 
 Added .req(), and ```ask_default()``` to the Grabber. 
 
+
 ## 1.1
 
 Added Localizer and now wraps toml Value in localizer for with\_toml\_env 
-Added Local Grabber so grab\_local should return a path, local to the config file selected
+Added Local Grabber so ```grab_local()``` should return a path, local to the config file selected

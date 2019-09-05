@@ -145,6 +145,10 @@ where
         self.res
     }
 
+    pub fn req(self) -> Result<PathBuf, ConfError> {
+        self.res.ok_or("Item not supplied".into())
+    }
+
     pub fn def<V>(self, v: V) -> PathBuf
     where
         PathBuf: From<V>,
