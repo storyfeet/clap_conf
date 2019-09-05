@@ -64,9 +64,14 @@ It's not ideal, but it's better than nothing.
 Changes
 ---------
 
+## 1.4
+
+Added a new method to ConfError called ```add_info(self, &str)->Self```
+So you can lazily add info to the message
+
 ## 1.3
 
-Added .req(), and .ask_default() to the Grabber. 
+Added .req(), and ```ask_default()``` to the Grabber. 
 
 ## 1.1
 
