@@ -43,7 +43,7 @@ impl From<toml::de::Error> for ConfError {
     }
 }
 
-type Job<E> = Fn(&str) -> Result<String, E>;
+type Job<E> = dyn Fn(&str) -> Result<String, E>;
 
 fn _replace<IT, E>(it: &mut IT, f: &Job<E>, depth: u8) -> Result<String, ConfError>
 where

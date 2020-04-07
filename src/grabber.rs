@@ -156,3 +156,49 @@ where
         self.res.unwrap_or(v.into())
     }
 }
+
+pub struct MultiGrabber<'a, G, R>
+where
+    G: Getter<'a, R>,
+    R: PartialEq + Debug + Display,
+{
+    g: &'a G,
+    res: Option<G::Iter>,
+    //_i: PhantomData<I>,
+}
+
+impl<'a, G, R> MultiGrabber<'a, G, R>
+where
+    G: Getter<'a, R>,
+    R: PartialEq + Debug + Display,
+{
+    pub fn new(g: &'a G) -> Self {
+        MultiGrabber { g, res: None }
+    }
+
+    pub fn op<S: AsRef<str>>(mut self, s: S, f: Filter) -> Self {
+        if let None = self.res {
+            self.res = self.g.values(s, f);
+        }
+        self
+    }
+
+    pub fn conf<S: AsRef<str>>(self, s: S) -> Self {
+        self.op(s, Filter::Conf)
+    }
+
+    pub fn env<S: AsRef<str>>(self, s: S) -> Self {
+        self.op(s, Filter::Env)
+    }
+    pub fn arg<S: AsRef<str>>(self, s: S) -> Self {
+        self.op(s, Filter::Arg)
+    }
+
+    pub fn done(self) -> Option<G::Iter> {
+        self.res
+    }
+
+    pub fn req(self) -> Result<G::Iter, ConfError> {
+        self.res.ok_or("Item not supplied".into())
+    }
+}

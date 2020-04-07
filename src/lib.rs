@@ -72,7 +72,7 @@ pub enum Filter {
     Other(char),
 }
 
-pub trait Getter<'a, R>: Sized 
+pub trait Getter<'a, R>: Sized
 where
     R: PartialEq + std::fmt::Debug + std::fmt::Display,
 {
@@ -112,8 +112,12 @@ where
         grabber::Grabber::new(self)
     }
 
-    fn grab_local(&'a self) -> grabber::LocalGrabber<'a,Self,R,Self::Iter>{
+    fn grab_local(&'a self) -> grabber::LocalGrabber<'a, Self, R, Self::Iter> {
         grabber::LocalGrabber::new(self)
+    }
+
+    fn grab_multi(&'a self) -> grabber::MultiGrabber<'a, Self, R> {
+        grabber::MultiGrabber::new(self)
     }
 }
 
@@ -155,5 +159,4 @@ mod tests {
         let r = with_toml_env(&a, &["test_data/test1.toml"]);
         assert_eq!(r.grab().conf("a.b.c").done(), Some("hello".to_string()));
     }
-
 }

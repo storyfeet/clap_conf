@@ -70,6 +70,9 @@ Added a new method to ConfError called ```add_info(self, &str)->Self```
 So you can lazily add info to the message
 Added ```.req()``` to LocalGrabber;
 
+Addded a MultiGrabber so getting arrays out is much simpler:
+use ```grab_multi()``` like you would use ```grab()``` or ```grab local()```
+
 ## 1.3
 
 Added .req(), and ```ask_default()``` to the Grabber. 
