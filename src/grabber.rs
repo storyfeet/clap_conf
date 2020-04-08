@@ -1,6 +1,7 @@
 use std::fmt::{Debug, Display};
 use std::marker::PhantomData;
 use std::path::PathBuf;
+use std::str::FromStr;
 
 use crate::replace::{replace_env, ConfError};
 use crate::{Filter, Getter};
@@ -65,6 +66,25 @@ where
     }
 }
 
+impl<'a, H, R, I> Grabber<'a, H, R, I>
+where
+    I: Iterator<Item = R>,
+    H: Getter<'a, R>,
+    R: PartialEq + Debug + Display + AsRef<str>,
+{
+    pub fn t_done<T: FromStr>(self) -> Option<T> {
+        match self.res {
+            Some(r) => r.as_ref().parse().ok(),
+            None => None,
+        }
+    }
+    pub fn t_def<T: FromStr>(self, def: T) -> T {
+        match self.res {
+            Some(r) => r.as_ref().parse().unwrap_or(def),
+            None => def,
+        }
+    }
+}
 impl<'a, H, R, I> Grabber<'a, H, R, I>
 where
     I: Iterator<Item = R>,
