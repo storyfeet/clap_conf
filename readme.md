@@ -64,6 +64,10 @@ It's not ideal, but it's better than nothing.
 Changes
 ---------
 
+## 0.1.5
+Now uses std::error::Error;
+
+
 ## 1.4
 
 Added a new method to ConfError called ```add_info(self, &str)->Self```
