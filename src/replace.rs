@@ -1,16 +1,17 @@
-use failure_derive::*;
+//use failure_derive::*;
+use thiserror::*;
 
-#[derive(Clone, Fail, Debug)]
+#[derive(Clone, Error, Debug)]
 pub enum ConfError {
-    #[fail(display = "Syntax Error Parsing String")]
+    #[error("Syntax Error Parsing String")]
     Syntax,
-    #[fail(display = "Environment variable not found")]
+    #[error("Environment variable not found")]
     VarNotFound,
-    #[fail(display = "Could not load file {}", 0)]
+    #[error("Could not load file {}", 0)]
     LoadError(String),
-    #[fail(display = "{}", _0)]
+    #[error("{}", _0)]
     Mess(&'static str),
-    #[fail(display = "{}", _0)]
+    #[error("{}", _0)]
     Message(String),
 }
 
