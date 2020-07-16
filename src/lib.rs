@@ -45,7 +45,10 @@ use std::path::PathBuf;
 
 pub use clap::{clap_app, crate_version, ArgMatches, Values};
 
-pub fn clap_env<'a, G: Getter<'a, &'a str>>(a: G) -> Holder<'a, env::Enver, G, String, &'a str> {
+pub fn clap_env<'a, G: Getter<'a>>(a: G) -> Holder<env::Enver, G>
+where
+    String: From<G::Out>,
+{
     //a.wrap(|v|v.to_string()).hold(env::Enver{})
     env::Enver {}.hold(a)
 }
@@ -53,9 +56,9 @@ pub fn clap_env<'a, G: Getter<'a, &'a str>>(a: G) -> Holder<'a, env::Enver, G, S
 pub fn with_toml_env<'a, G, S, IT>(
     a: G,
     it: IT,
-) -> Holder<'a, Holder<'a, env::Enver, G, String, &'a str>, Localizer<toml::Value>, String, String>
+) -> Holder<Holder<env::Enver, G>, Localizer<toml::Value>>
 where
-    G: Getter<'a, &'a str>,
+    G: Getter<'a, Out = &'a str>,
     S: AsRef<str>,
     IT: IntoIterator<Item = S>,
 {
@@ -72,12 +75,10 @@ pub enum Filter {
     Other(char),
 }
 
-pub trait Getter<'a, R>: Sized
-where
-    R: PartialEq + std::fmt::Debug + std::fmt::Display,
-{
-    type Iter: Iterator<Item = R>;
-    fn value<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<R>;
+pub trait Getter<'a>: Sized {
+    type Iter: Iterator<Item = Self::Out>;
+    type Out: PartialEq + std::fmt::Debug + std::fmt::Display;
+    fn value<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<Self::Out>;
     fn values<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<Self::Iter>;
 
     fn local_value<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<PathBuf> {
@@ -94,29 +95,28 @@ where
         return false;
     }
 
-    fn wrap<R2, F: Fn(R) -> R2>(self, f: F) -> convert::Wrapper<Self, F, R> {
+    fn wrap<R2, F: Fn(Self::Out) -> R2>(self, f: F) -> convert::Wrapper<Self, F> {
         convert::Wrapper::new(self, f)
     }
 
-    fn hold<B, RB>(self, b: B) -> convert::Holder<'a, Self, B, R, RB>
+    fn hold<B>(self, b: B) -> convert::Holder<Self, B>
     where
-        B: Getter<'a, RB>,
-        R: std::convert::From<RB>,
-        RB: PartialEq + std::fmt::Debug + std::fmt::Display,
-        B::Iter: Iterator<Item = RB>,
+        B: Getter<'a>,
+        Self::Out: std::convert::From<B::Out>,
+        B::Out: PartialEq + std::fmt::Debug + std::fmt::Display,
     {
         convert::Holder::new(self, b)
     }
 
-    fn grab(&'a self) -> grabber::Grabber<'a, Self, R, Self::Iter> {
+    fn grab(&'a self) -> grabber::Grabber<'a, Self> {
         grabber::Grabber::new(self)
     }
 
-    fn grab_local(&'a self) -> grabber::LocalGrabber<'a, Self, R, Self::Iter> {
+    fn grab_local(&'a self) -> grabber::LocalGrabber<'a, Self> {
         grabber::LocalGrabber::new(self)
     }
 
-    fn grab_multi(&'a self) -> grabber::MultiGrabber<'a, Self, R> {
+    fn grab_multi(&'a self) -> grabber::MultiGrabber<'a, Self> {
         grabber::MultiGrabber::new(self)
     }
 }

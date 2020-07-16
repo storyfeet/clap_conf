@@ -1,5 +1,3 @@
-use std::fmt::{Debug, Display};
-use std::marker::PhantomData;
 use std::path::PathBuf;
 use std::str::FromStr;
 
@@ -7,29 +5,20 @@ use crate::replace::{replace_env, ConfError};
 use crate::{Filter, Getter};
 
 #[derive(Clone, Debug)]
-pub struct Grabber<'a, H, R, I>
+pub struct Grabber<'a, H>
 where
-    I: Iterator<Item = R>,
-    H: Getter<'a, R>,
-    R: PartialEq + std::fmt::Debug + std::fmt::Display,
+    H: Getter<'a>,
 {
     h: &'a H,
-    res: Option<R>,
-    _i: PhantomData<I>,
+    res: Option<H::Out>,
 }
 
-impl<'a, H, R, I> Grabber<'a, H, R, I>
+impl<'a, H> Grabber<'a, H>
 where
-    I: Iterator<Item = R>,
-    H: Getter<'a, R>,
-    R: PartialEq + Debug + Display,
+    H: Getter<'a>,
 {
     pub fn new(h: &'a H) -> Self {
-        Grabber {
-            h,
-            res: None,
-            _i: PhantomData,
-        }
+        Grabber { h, res: None }
     }
 
     pub fn op<S: AsRef<str>>(mut self, s: S, f: Filter) -> Self {
@@ -50,27 +39,26 @@ where
         self.op(s, Filter::Arg)
     }
 
-    pub fn done(self) -> Option<R> {
+    pub fn done(self) -> Option<H::Out> {
         self.res
     }
 
-    pub fn def<V>(self, v: V) -> R
+    pub fn def<V>(self, v: V) -> H::Out
     where
-        R: From<V>,
+        H::Out: From<V>,
     {
         self.res.unwrap_or(v.into())
     }
 
-    pub fn req(self) -> Result<R, ConfError> {
+    pub fn req(self) -> Result<H::Out, ConfError> {
         self.res.ok_or("Item not supplied".into())
     }
 }
 
-impl<'a, H, R, I> Grabber<'a, H, R, I>
+impl<'a, H> Grabber<'a, H>
 where
-    I: Iterator<Item = R>,
-    H: Getter<'a, R>,
-    R: PartialEq + Debug + Display + AsRef<str>,
+    H: Getter<'a>,
+    H::Out: AsRef<str>,
 {
     pub fn t_done<T: FromStr>(self) -> Option<T> {
         match self.res {
@@ -85,11 +73,10 @@ where
         }
     }
 }
-impl<'a, H, R, I> Grabber<'a, H, R, I>
+impl<'a, H> Grabber<'a, H>
 where
-    I: Iterator<Item = R>,
-    H: Getter<'a, R>,
-    R: PartialEq + std::fmt::Debug + AsRef<str> + std::fmt::Display,
+    H: Getter<'a>,
+    H::Out: AsRef<str>,
 {
     pub fn rep_env(self) -> Result<String, ConfError> {
         replace_env(self.res.ok_or("No Res")?.as_ref())
@@ -118,29 +105,20 @@ where
     }
 }
 
-pub struct LocalGrabber<'a, G, R, I>
+pub struct LocalGrabber<'a, G>
 where
-    I: Iterator<Item = R>,
-    G: Getter<'a, R>,
-    R: PartialEq + Debug + Display,
+    G: Getter<'a>,
 {
     g: &'a G,
     res: Option<PathBuf>,
-    _i: PhantomData<I>,
 }
 
-impl<'a, G, R, I> LocalGrabber<'a, G, R, I>
+impl<'a, G> LocalGrabber<'a, G>
 where
-    I: Iterator<Item = R>,
-    G: Getter<'a, R>,
-    R: PartialEq + Debug + Display,
+    G: Getter<'a>,
 {
     pub fn new(g: &'a G) -> Self {
-        LocalGrabber {
-            g,
-            res: None,
-            _i: PhantomData,
-        }
+        LocalGrabber { g, res: None }
     }
 
     pub fn op<S: AsRef<str>>(mut self, s: S, f: Filter) -> Self {
@@ -177,20 +155,18 @@ where
     }
 }
 
-pub struct MultiGrabber<'a, G, R>
+pub struct MultiGrabber<'a, G>
 where
-    G: Getter<'a, R>,
-    R: PartialEq + Debug + Display,
+    G: Getter<'a>,
 {
     g: &'a G,
     res: Option<G::Iter>,
     //_i: PhantomData<I>,
 }
 
-impl<'a, G, R> MultiGrabber<'a, G, R>
+impl<'a, G> MultiGrabber<'a, G>
 where
-    G: Getter<'a, R>,
-    R: PartialEq + Debug + Display,
+    G: Getter<'a>,
 {
     pub fn new(g: &'a G) -> Self {
         MultiGrabber { g, res: None }

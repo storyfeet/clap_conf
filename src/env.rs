@@ -5,7 +5,8 @@ pub static EV: Enver = Enver {};
 #[derive(Debug)]
 pub struct Enver {}
 
-impl<'a> Getter<'a,String> for Enver {
+impl<'a> Getter<'a> for Enver {
+    type Out = String;
     type Iter = std::option::IntoIter<String>;
     fn value<S: AsRef<str>>(&self, s: S, f: Filter) -> Option<String> {
         if f == Filter::Env {

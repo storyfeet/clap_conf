@@ -47,8 +47,8 @@ fn dig<S: AsRef<str>, I: Iterator<Item = S>>(v: &Value, mut i: I) -> Option<&Val
     }
 }
 
-impl<'a> Getter<'a, String> for Value {
-    //This uses the Getter for &Value impl but has a different return type.
+impl<'a> Getter<'a> for Value {
+    type Out = String;
     type Iter = std::vec::IntoIter<String>;
     fn bool_flag<S: AsRef<str>>(&self, s: S, f: Filter) -> bool {
         (&self).bool_flag(s, f)
@@ -73,7 +73,8 @@ impl<'a> Getter<'a, String> for Value {
         Some(res.into_iter())
     }
 }
-impl<'a> Getter<'a, &'a Value> for &'a Value {
+impl<'a> Getter<'a> for &'a Value {
+    type Out = &'a Value;
     type Iter = std::slice::Iter<'a, Value>;
     fn bool_flag<S: AsRef<str>>(&self, s: S, f: Filter) -> bool {
         if f != Filter::Conf {

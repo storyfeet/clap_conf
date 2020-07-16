@@ -17,7 +17,8 @@ fn dig<'a, 'b, 'c>(m: &'a ArgMatches<'b>, s: &'c str) -> Option<(&'a ArgMatches<
     _dig(m, it.next()?, it)
 }
 
-impl<'a, 'b> Getter<'a,&'a str> for &'a ArgMatches<'b> {
+impl<'a, 'b> Getter<'a> for &'a ArgMatches<'b> {
+    type Out = &'a str;
     type Iter = Values<'a>;
     fn bool_flag<S: AsRef<str>>(&self, s: S, f: Filter) -> bool {
         if f != Filter::Arg {
